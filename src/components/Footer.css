@@ -1,0 +1,20 @@
+.footer { padding-top: 4.5rem; color: rgb(245 248 242 / 0.7); border-top: 1px solid rgb(255 255 255 / 0.08); background: var(--color-ink); }
+.footer-container { display: flex; flex-direction: column; gap: 3rem; margin-bottom: 3.5rem; }
+.footer .logo { color: #f5f8f2; }
+.footer .logo-mark { color: #101513; background: #f5f8f2; border-color: rgb(245 248 242 / 0.22); box-shadow: none; }
+.footer .logo-tagline { color: rgb(245 248 242 / 0.4); }
+.footer-brand { max-width: 345px; }
+.footer-brand .logo { margin-bottom: 1.25rem; }
+.footer-description { color: rgb(245 248 242 / 0.55); font-size: 0.84rem; line-height: 1.7; }
+.footer-links { display: flex; flex-wrap: wrap; gap: 2.8rem; }
+.link-group { display: flex; min-width: 100px; flex-direction: column; gap: 0.72rem; }
+.link-group h4 { margin-bottom: 0.3rem; color: #f5f8f2; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+.link-group a { color: rgb(245 248 242 / 0.52); font-size: 0.78rem; transition: color var(--transition-fast); }
+.link-group a:hover { color: var(--color-secondary); }
+.footer-bottom { padding: 1.2rem 0; border-top: 1px solid rgb(255 255 255 / 0.1); }
+.footer-bottom p { color: rgb(245 248 242 / 0.4); font-size: 0.67rem; }
+
+@media (min-width: 768px) {
+  .footer-container { flex-direction: row; justify-content: space-between; }
+  .footer-links { gap: 5rem; }
+}

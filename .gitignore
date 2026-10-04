@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Local environment and secrets
+.env
+.env.*
+**/.env
+**/.env.*
+!**/.env.example
+
+# Generated output and test artifacts
+dist/
+coverage/
+*.log
+npm-debug.log*
+
+# Runtime uploads (keep the directory placeholder)
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Editor and operating-system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
