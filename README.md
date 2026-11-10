@@ -6,7 +6,7 @@ Civora is a civic issue reporting and resolution platform that connects citizens
 
 - Smart issue reporting with image upload, map location, AI routing insight, and duplicate detection
 - Live civic feed with community confirmations and complaint discussion
-- Interactive Leaflet map synchronized with issue cards
+- Interactive Google Maps map synchronized with issue cards
 - End-to-end complaint tracking and citizen resolution verification
 - Government officer portal with department, priority, SLA, and resolution workflows
 - English and Tamil interface support with accessibility controls
@@ -15,7 +15,7 @@ Civora is a civic issue reporting and resolution platform that connects citizens
 ## Technology
 
 - React 19 and Vite 8
-- React Router, Leaflet, React Leaflet, and Lucide icons
+- React Router, Google Maps JavaScript API, and Lucide icons
 - Node.js and Express 5
 - PostgreSQL 18 using the `pg` driver
 - Optional Google Gemini integration
@@ -81,6 +81,8 @@ The complete template is in `backend/.env.example`.
 | `ADMIN_NAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Private officer account identity |
 | `GEMINI_API_KEY` | Optional AI chatbot and description analysis |
 | `DB_SSL` | Enables PostgreSQL TLS when set to `true` |
+
+Copy the root `.env.example` to `.env.local` and set `VITE_GOOGLE_MAPS_API_KEY` to your browser API key. Enable **Maps JavaScript API**, **Geocoding API**, and billing on its Google Cloud project. Restrict the key to the Maps JavaScript API and Geocoding API and your website referrers (including `http://localhost:5177/*` for development). The report form automatically locates the entered area and city before the details step; users can then refine the issue pin on the map. Restart Vite after changing environment variables. The browser key is visible in client requests by design; referrer and API restrictions control its use.
 
 The frontend can use `VITE_API_URL` to override its default API URL of `http://localhost:3000/api`.
 

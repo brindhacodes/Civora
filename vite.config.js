@@ -10,7 +10,6 @@ export default defineConfig({
         codeSplitting: {
           groups: [
             { name: 'react-vendor', test: /node_modules[\\/](react|react-dom|react-router|react-router-dom)[\\/]/ },
-            { name: 'map-vendor', test: /node_modules[\\/](leaflet|react-leaflet|@react-leaflet)[\\/]/ },
             { name: 'icons-vendor', test: /node_modules[\\/]lucide-react[\\/]/ },
           ],
         },

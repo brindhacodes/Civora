@@ -30,11 +30,15 @@ const createComplaint = async (req, res, next) => {
         res.status(201).json({
             success: true,
             data: {
+                id: complaint.id,
                 complaintId: complaint.complaint_id,
                 name: complaint.name,
                 phone: complaint.phone,
                 area: complaint.area,
                 city: complaint.city,
+                pincode: complaint.pincode,
+                latitude: complaint.latitude,
+                longitude: complaint.longitude,
                 issueType: complaint.issue_type,
                 description: complaint.description,
                 severity: complaint.severity,

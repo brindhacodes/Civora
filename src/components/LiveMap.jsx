@@ -1,5 +1,4 @@
-import { CircleMarker, MapContainer, Popup, TileLayer, useMap } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
+import GoogleMap from './GoogleMap';
 import { API_BASE, API_ORIGIN } from '../services/api';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -16,29 +15,6 @@ import {
   X,
 } from 'lucide-react';
 import './LiveMap.css';
-
-const BASE_LAYERS = {
-  street: {
-    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    maxZoom: 19,
-  },
-  satellite: {
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    attribution: 'Tiles &copy; Esri',
-    maxZoom: 19,
-  },
-  terrain: {
-    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-    attribution: 'Map data &copy; OpenStreetMap contributors, map style &copy; OpenTopoMap',
-    maxZoom: 17,
-  },
-};
-
-const SATELLITE_LABELS = {
-  url: 'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
-  attribution: 'Labels &copy; Esri',
-};
 
 const getCategoryColor = (issueType) => {
   const value = String(issueType || '').toLowerCase();
@@ -58,20 +34,6 @@ const getServiceGroup = (report) => {
 };
 
 const isResolved = (report) => String(report.status || '').toLowerCase() === 'resolved';
-
-const MapViewport = ({ coords, focusRequest }) => {
-  const map = useMap();
-
-  useEffect(() => {
-    window.setTimeout(() => map.invalidateSize(), 0);
-  }, [map]);
-
-  useEffect(() => {
-    if (coords) map.flyTo([coords.lat, coords.lng], 15, { duration: 0.8 });
-  }, [coords, focusRequest, map]);
-
-  return null;
-};
 
 const copy = {
   en: {
@@ -202,6 +164,17 @@ const LiveMap = ({ language = 'en' }) => {
     return serviceMatches && statusMatches && areaMatches && dateMatches;
   }), [areaFilter, dateFilter, now, reports, serviceFilter, statusFilter]);
   const areas = useMemo(() => [...new Set(reports.map((report) => report.area).filter(Boolean))].sort(), [reports]);
+  const selectedAreaCenter = useMemo(() => {
+    if (areaFilter === 'all') return null;
+    const points = reports.filter((report) => report.area === areaFilter)
+      .map((report) => ({ lat: Number(report.lat), lng: Number(report.lng) }))
+      .filter((point) => Number.isFinite(point.lat) && Number.isFinite(point.lng));
+    if (!points.length) return null;
+    return {
+      lat: (Math.min(...points.map((point) => point.lat)) + Math.max(...points.map((point) => point.lat))) / 2,
+      lng: (Math.min(...points.map((point) => point.lng)) + Math.max(...points.map((point) => point.lng))) / 2,
+    };
+  }, [areaFilter, reports]);
 
   const grouped = useMemo(() => {
     const groups = {};
@@ -213,8 +186,32 @@ const LiveMap = ({ language = 'en' }) => {
     return groups;
   }, [filteredReports]);
 
-  const defaultCenter = [13.0827, 80.2707];
-  const selectedLayer = BASE_LAYERS[baseLayer];
+  const markers = useMemo(() => {
+    const pins = showReports ? Object.values(grouped).flatMap((group) => group.map((report, index) => {
+      const angle = (index / group.length) * 2 * Math.PI;
+      const offset = group.length > 1 ? 0.0003 : 0;
+      return {
+        lat: Number(report.lat) + offset * Math.cos(angle),
+        lng: Number(report.lng) + offset * Math.sin(angle),
+        color: getCategoryColor(report.issueType),
+        selected: Boolean(focusedReport?.id && String(focusedReport.id) === String(report.id)),
+        density: showHeatmap,
+        report,
+        image: report.image_url ? new URL(report.image_url, API_ORIGIN).href : null,
+        lines: [report.issueType, report.complaint_id || report.id, report.place,
+          report.description, `${report.severity} priority · ${report.status}`,
+          `${report.department || 'City services'} · ${report.date}`,
+          group.length > 1 ? `${group.length} reports at this location` : null],
+      };
+    })) : [];
+    if (userLocation) pins.push({ ...userLocation, color: '#155c49', title: text.yourLocation });
+    return pins;
+  }, [grouped, showReports, showHeatmap, focusedReport, userLocation, text.yourLocation]);
+  const selectReport = useCallback((marker) => {
+    if (marker.report) window.dispatchEvent(new CustomEvent('civora:select-report', {
+      detail: { id: marker.report.id, complaintId: marker.report.complaint_id },
+    }));
+  }, []);
   const mapTypes = [
     { id: 'street', label: text.street, icon: <MapIcon size={22} /> },
     { id: 'satellite', label: text.satellite, icon: <Satellite size={22} /> },
@@ -260,7 +257,7 @@ const LiveMap = ({ language = 'en' }) => {
             </div>
           </div>
           <div className="civic-map-filters" aria-label="Civic map filters">
-            <label><span>Ward / area</span><select value={areaFilter} onChange={(event) => setAreaFilter(event.target.value)}><option value="all">All areas</option>{areas.map((area) => <option value={area} key={area}>{area}</option>)}</select></label>
+            <label><span>Ward / area</span><select value={areaFilter} onChange={(event) => { setAreaFilter(event.target.value); setFocusedReport(null); sessionStorage.removeItem("civora_map_focus"); setFocusRequest((value) => value + 1); }}><option value="all">All areas</option>{areas.map((area) => <option value={area} key={area}>{area}</option>)}</select></label>
             <label><span>Category</span><select value={serviceFilter} onChange={(event) => setServiceFilter(event.target.value)}>{serviceOptions.map((option) => <option value={option.id} key={option.id}>{option.label}</option>)}</select></label>
             <label><span>Status</span><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>{statusOptions.map((option) => <option value={option.id} key={option.id}>{option.label}</option>)}</select></label>
             <label><span>Date reported</span><select value={dateFilter} onChange={(event) => setDateFilter(event.target.value)}><option value="all">Any date</option><option value="7">Last 7 days</option><option value="30">Last 30 days</option></select></label>
@@ -268,42 +265,19 @@ const LiveMap = ({ language = 'en' }) => {
           </div>
 
           <div className="map-canvas">
-            <MapContainer center={userLocation ? [userLocation.lat, userLocation.lng] : defaultCenter} zoom={13} zoomControl>
-              <TileLayer key={baseLayer} url={selectedLayer.url} attribution={selectedLayer.attribution} maxZoom={selectedLayer.maxZoom} />
-              {baseLayer === 'satellite' && showLabels && <TileLayer url={SATELLITE_LABELS.url} attribution={SATELLITE_LABELS.attribution} maxZoom={19} />}
-              <MapViewport coords={focusedReport || userLocation} focusRequest={focusRequest} />
-              {userLocation && (
-                <CircleMarker center={[userLocation.lat, userLocation.lng]} radius={10} pathOptions={{ color: '#155c49', fillColor: '#d7f36b', fillOpacity: 0.95 }}>
-                  <Popup><strong>{text.yourLocation}</strong></Popup>
-                </CircleMarker>
-              )}
-              {showReports && showHeatmap && filteredReports.map((report, index) => <CircleMarker key={`heat-${report.id || index}`} center={[parseFloat(report.lat), parseFloat(report.lng)]} radius={26} pathOptions={{ stroke:false, fillColor:getCategoryColor(report.issueType), fillOpacity:.18 }} />)}
-              {showReports && Object.values(grouped).map((group, groupIndex) => group.map((report, index) => {
-                const angle = (index / group.length) * 2 * Math.PI;
-                const offset = group.length > 1 ? 0.0003 : 0;
-                const lat = parseFloat(report.lat) + offset * Math.cos(angle);
-                const lng = parseFloat(report.lng) + offset * Math.sin(angle);
-                return (
-                  <CircleMarker key={`${groupIndex}-${index}`} center={[lat, lng]} radius={String(focusedReport?.id) === String(report.id) ? 13 : 8} pathOptions={{ color: String(focusedReport?.id) === String(report.id) ? '#10231d' : getCategoryColor(report.issueType), fillColor: getCategoryColor(report.issueType), fillOpacity: 0.9, weight: String(focusedReport?.id) === String(report.id) ? 5 : 3 }} eventHandlers={{ click: () => window.dispatchEvent(new CustomEvent('civora:select-report', { detail:{ id:report.id, complaintId:report.complaint_id } })) }}>
-                    <Popup>
-                      <div className="map-popup">
-                        {report.image_url && <img src={`${API_ORIGIN}${report.image_url}`} alt="Reported issue" />}
-                        <small>{report.complaint_id || report.id}</small>
-                        <strong>{report.issueType}</strong>
-                        <span>{report.place || 'Location not specified'}</span>
-                        {report.description && <p>{report.description}</p>}
-                        <span>{report.severity} priority · {report.status}</span>
-                        <span>{report.department || 'City services'} · {report.date}</span>
-                        {group.length > 1 && <b>{group.length} reports at this location</b>}
-                      </div>
-                    </Popup>
-                  </CircleMarker>
-                );
-              }))}
-            </MapContainer>
+            <GoogleMap
+              center={focusedReport ? { lat: Number(focusedReport.lat), lng: Number(focusedReport.lng) } : selectedAreaCenter || userLocation || { lat: 13.0827, lng: 80.2707 }}
+              zoom={focusedReport || selectedAreaCenter || userLocation ? 15 : 13}
+              focusRequest={focusRequest}
+              mapType={baseLayer}
+              showLabels={showLabels}
+              markers={markers}
+              onMarkerSelect={selectReport}
+              language={language}
+            />
 
             <div className="map-canvas__actions">
-              <button type="button" className="map-float-button" onClick={() => { if (userLocation) { setFocusedReport(null); sessionStorage.removeItem('civora_map_focus'); setFocusRequest((request) => request + 1); } }} disabled={!userLocation} aria-label={userLocation ? text.center : text.locationUnavailable} title={userLocation ? text.center : text.locationUnavailable}>
+              <button type="button" className="map-float-button" onClick={() => { if (userLocation) { setFocusedReport(null); setAreaFilter('all'); sessionStorage.removeItem('civora_map_focus'); setFocusRequest((request) => request + 1); } }} disabled={!userLocation} aria-label={userLocation ? text.center : text.locationUnavailable} title={userLocation ? text.center : text.locationUnavailable}>
                 <Crosshair size={19} />
               </button>
               <button type="button" className={`map-float-button${layersOpen ? ' is-active' : ''}`} onClick={() => setLayersOpen((open) => !open)} aria-label={text.settings} title={text.settings}>

@@ -75,7 +75,7 @@ const HeroSection = ({ onOpenReport, language = 'en' }) => {
   }, []);
 
   return (
-    <section className="hero-modern">
+    <section className="hero-modern" lang={language}>
       <div className="hero-grid-glow hero-grid-glow--left" />
       <div className="hero-grid-glow hero-grid-glow--right" />
       <div className="container hero-modern__container">

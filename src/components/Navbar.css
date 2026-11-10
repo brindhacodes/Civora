@@ -94,11 +94,12 @@
   align-items: center;
   justify-content: center;
   gap: 0.1rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   flex: 1;
 }
 
 .nav-link {
+  white-space: nowrap;
   font-weight: 600;
   font-size: 0.8rem;
   color: var(--color-text-muted);
@@ -196,7 +197,7 @@
   }
 }
 
-@media (max-width: 700px) {
+@media (max-width: 1100px) {
   .government-bar__inner > span { font-size: .65rem; }
   .government-bar__tools > button:not(.government-language),.government-bar__tools a { display:none; }
   .navbar {

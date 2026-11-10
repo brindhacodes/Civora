@@ -15,6 +15,7 @@ class Complaint {
             email,
             area,
             city,
+            pincode,
             landmark,
             issueType,
             description,
@@ -35,8 +36,8 @@ class Complaint {
                 complaint_id, name, phone, email, area, city, landmark,
                 issue_type, description, severity, duration,
                 allow_volunteers, want_updates, image_url,
-                latitude, longitude, department, status, user_id
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, 'Submitted', $18)
+                latitude, longitude, department, status, user_id, pincode
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, 'Submitted', $18, $19)
             RETURNING *
         `;
 
@@ -44,7 +45,7 @@ class Complaint {
             complaintId, name, phone, email, area, city, landmark,
             issueType, description, severity, duration,
             allowVolunteers, wantUpdates, imageUrl,
-            latitude, longitude, department, userId
+            latitude, longitude, department, userId, pincode || null
         ];
 
         const result = await pool.query(query, values);

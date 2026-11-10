@@ -13,6 +13,10 @@ const validateComplaint = (req, res, next) => {
 
     const errors = [];
 
+    if (req.body.pincode && !/^[1-9][0-9]{5}$/.test(String(req.body.pincode))) {
+        errors.push('PIN code must be 6 digits and cannot start with 0');
+    }
+
     // Required fields
     if (!name || name.trim() === '') {
         errors.push('Name is required');
